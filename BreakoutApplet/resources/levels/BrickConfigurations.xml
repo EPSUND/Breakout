@@ -1,0 +1,25 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<gameConfiguration>
+  <cellWidth>40</cellWidth>
+  <cellHeight>20</cellHeight>
+  <brickConfiguration>
+    <hits>1</hits>
+    <score>10</score>
+    <color>Red</color>
+  </brickConfiguration>
+  <brickConfiguration>
+    <hits>2</hits>
+    <score>20</score>
+    <color>Green</color>
+  </brickConfiguration>
+  <brickConfiguration>
+    <hits>3</hits>
+    <score>30</score>
+    <color>Blue</color>
+  </brickConfiguration>
+  <brickConfiguration>
+    <hits>4</hits>
+    <score>40</score>
+    <color>Yellow</color>
+  </brickConfiguration>
+</gameConfiguration>
