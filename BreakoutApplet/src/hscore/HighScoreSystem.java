@@ -1,7 +1,5 @@
 package hscore;
 
-import java.net.URLConnection;
-
 /**
  * A high score system that allows users to record high score entries and view the high score list
  * @author Erik
