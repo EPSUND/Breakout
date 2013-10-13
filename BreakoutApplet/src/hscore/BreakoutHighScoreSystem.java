@@ -27,8 +27,6 @@ public class BreakoutHighScoreSystem implements HighScoreSystem {
 	
 	/**
 	 * The constructor for BreakoutHighScoreSystem
-	 * @param unsortedListFeed The URL to the spreadsheet where high score entries will be written 
-	 * @param sortedListFeed The URL to the spreadsheet where high score entries will be read
 	 * @param highScoreListDialog The high score dialog that the system will use
 	 */
 	public BreakoutHighScoreSystem(HighScoreListDialog highScoreListDialog)
