@@ -167,10 +167,7 @@ public class Breakout extends JApplet implements Runnable {
 		gameEngine = new GameEngine(breakoutCanvas);
 		
 		/*Make the high score system*/
-		highScoreSystem = new BreakoutHighScoreSystem(makeUnsortedListFeedURL(),
-				 								     makeSortedListFeedURL(),
-				 								     new HighScoreListDialog(new BreakoutHighScoreTableModel())
-				 									 );
+		highScoreSystem = new BreakoutHighScoreSystem(new HighScoreListDialog(new BreakoutHighScoreTableModel()));
 	}
 	
 	/***
@@ -362,51 +359,5 @@ public class Breakout extends JApplet implements Runnable {
 		//Start the game thread
 	    gameThread = new Thread(this);
 	    gameThread.start();
-	}
-	
-	/**
-	 * Make a URL to the spreadsheet where high score entries will be written
-	 * @return A URL to the spreadsheet where high score entries will be written
-	 */
-	private URL makeUnsortedListFeedURL()
-	{
-		URL url;
-		
-		try
-		{
-			url = new URL("https://spreadsheets.google.com/feeds/list/t1SeDsmbg-p3CPNa_b-QllA/od6/private/full");
-		}
-		catch(MalformedURLException e)
-		{
-			System.err.println("Breakout: The provided URL is malformed");
-			e.printStackTrace();
-			//Make the url null just in case
-			url = null;
-		}
-		
-		return url;
-	}
-	
-	/**
-	 * Make a URL to the spreadsheet where high score entries will be read
-	 * @return A URL to the spreadsheet where high score entries will be read
-	 */
-	private URL makeSortedListFeedURL()
-	{
-		URL url;
-		
-		try
-		{
-			url = new URL("https://spreadsheets.google.com/feeds/list/t1SeDsmbg-p3CPNa_b-QllA/od7/public/values");
-		}
-		catch(MalformedURLException e)
-		{
-			System.err.println("Breakout: The provided URL is malformed");
-			e.printStackTrace();
-			//Make the url null just in case
-			url = null;
-		}
-		
-		return url;
 	}
 }

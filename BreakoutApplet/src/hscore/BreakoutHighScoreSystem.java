@@ -1,18 +1,16 @@
 package hscore;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 
 import javax.swing.JOptionPane;
 
 import utils.Helpers;
-
-import com.google.gdata.client.spreadsheet.SpreadsheetService;
-import com.google.gdata.data.spreadsheet.ListEntry;
-import com.google.gdata.data.spreadsheet.ListFeed;
-import com.google.gdata.util.AuthenticationException;
-import com.google.gdata.util.ServiceException;
 
 /**
  * A class handling the Breakout high score list
@@ -20,14 +18,12 @@ import com.google.gdata.util.ServiceException;
  *
  */
 public class BreakoutHighScoreSystem implements HighScoreSystem {
-	
-	private static final String USERNAME = "shmiagames@gmail.com";
-	private static final String PASSWORD = "holmsund19";
+	/**
+	 * The URL to the high score service
+	 */
+	private static final String HIGH_SCORE_SERVICE_URL = "http://highscoresystemes86.appspot.com/highscoresystem";
 	
 	private HighScoreListDialog highScoreDialog;
-	
-	private SpreadsheetService highScoreService;
-	private URL readWSListFeedURL, writeWSListFeedURL;
 	
 	/**
 	 * The constructor for BreakoutHighScoreSystem
@@ -35,22 +31,9 @@ public class BreakoutHighScoreSystem implements HighScoreSystem {
 	 * @param sortedListFeed The URL to the spreadsheet where high score entries will be read
 	 * @param highScoreListDialog The high score dialog that the system will use
 	 */
-	public BreakoutHighScoreSystem(URL unsortedListFeed, URL sortedListFeed, HighScoreListDialog highScoreListDialog)
+	public BreakoutHighScoreSystem(HighScoreListDialog highScoreListDialog)
 	{	
-		readWSListFeedURL = sortedListFeed;
-		writeWSListFeedURL = unsortedListFeed;
 		this.highScoreDialog = highScoreListDialog;
-		
-		highScoreService = new SpreadsheetService("HighScoreService");
-		
-		//Make a spreadsheet service
-		try 
-		{
-			highScoreService.setUserCredentials(USERNAME, PASSWORD);
-		} catch (AuthenticationException e) {
-			System.err.println("Breakout: Could not authenicate user");
-			e.printStackTrace();
-		}
 	}
 	
 	public void registerScore(Object[] args)
@@ -69,52 +52,108 @@ public class BreakoutHighScoreSystem implements HighScoreSystem {
 		
 		if(name != null)
 		{
-			registerScore(score, level, name);
-			showHighScoreList();
+			try
+			{
+				URLConnection hscoreConn = getHighScoreConnection(score, level, name);
+				
+				if(hscoreConn != null)
+				{
+					hscoreConn.connect();
+					showHighScoreList(hscoreConn);
+				}
+			}
+			catch(IOException e)
+			{
+				System.err.println("Breakout: Could not connect to the highscore service");
+				e.printStackTrace();
+			}
 		}
 	}
 	
 	/**
-	 * Registers a Breakout high score entry
+	 * Gets a connection to the high score service with the parameters needed to add a highscore entry
 	 * @param score The score
 	 * @param level The level
 	 * @param name The player's name
+	 * @return A connection to the highscore service
 	 */
-	private void registerScore(int score, int level, String name)
+	private URLConnection getHighScoreConnection(int score, int level, String name)
 	{	
 		try 
 		{
-			ListEntry newEntry = new ListEntry();
-			newEntry.getCustomElements().setValueLocal("name", name);
-			newEntry.getCustomElements().setValueLocal("score", Integer.toString(score));
-			newEntry.getCustomElements().setValueLocal("level", Integer.toString(level));
-			newEntry.getCustomElements().setValueLocal("date", Helpers.getCurrentTimeUTC());
-			highScoreService.insert(writeWSListFeedURL, newEntry);
+			URL registerHighScoreURL = new URL(HIGH_SCORE_SERVICE_URL + "?highScoreList=breakout" + 
+											   "&name=" + name + 
+											   "&score=" + Integer.toString(score) + 
+											   "&level=" + Integer.toString(level) + 
+											   "&date=" + Helpers.getCurrentTimeUTC());
+			
+			return registerHighScoreURL.openConnection();
+			
 		} catch (IOException e) {
-			System.err.println("Breakout: Could not add score entry");
+			System.err.println("Breakout: Could not get a connection to the high score service");
 			e.printStackTrace();
-		} catch (ServiceException e) {
-			System.err.println("Breakout: Could not add score entry");
-			e.printStackTrace();
-		}
+			return null;
+		} 
 	}
 	
-	public void showHighScoreList()
+	/**
+	 * Gets a connection to the high score service
+	 * @return A connection to the highscore service
+	 */
+	private URLConnection getHighScoreConnection()
+	{	
+		try 
+		{
+			URL registerHighScoreURL = new URL(HIGH_SCORE_SERVICE_URL + "?highScoreList=breakout");	
+			return registerHighScoreURL.openConnection();	
+		} catch (IOException e) {
+			System.err.println("Breakout: Could not get a connection to the high score service");
+			e.printStackTrace();
+			return null;
+		} 
+	}
+	
+	/***
+	 * Shows the high score list. Uses an already existing connection to the highscore service to get the highscore data
+	 * @param highScoreServiceConn A connection to the highscore service
+	 */
+	public void showHighScoreList(URLConnection highScoreServiceConn)
 	{
+		InputStream highScoreStream = null;
+		
 		try {
-			ListFeed scoreRowFeed = highScoreService.getFeed(readWSListFeedURL, ListFeed.class);
+			highScoreStream = highScoreServiceConn.getInputStream();
+			BufferedReader reader = new BufferedReader(new InputStreamReader(highScoreStream));
 			
+			String line;
 			ArrayList<Object[]> highScoreList = new ArrayList<Object[]>();
 			
-			for(ListEntry row : scoreRowFeed.getEntries())
+			while((line = reader.readLine()) != null)
 			{
+				String[] highScoreData = line.split(",");
 				Object[] objRow = new Object[4];
-				objRow[0] = row.getCustomElements().getValue("name");
-				objRow[1] = row.getCustomElements().getValue("score");
-				objRow[2] = row.getCustomElements().getValue("level");
 				
-				objRow[3] = row.getCustomElements().getValue("date");
-				objRow[3] = Helpers.utcToLocalTime((String)objRow[3]);
+				for(String highScoreItem : highScoreData)
+				{
+					String[] components = highScoreItem.split("=");
+					
+					if(components[0].equals("name"))
+					{
+						objRow[0] = components[1];
+					}
+					else if(components[0].equals("score"))
+					{
+						objRow[1] = components[1];
+					}
+					else if(components[0].equals("level"))
+					{
+						objRow[2] = components[1];
+					}
+					else if(components[0].equals("date"))
+					{
+						objRow[3] = Helpers.utcToLocalTime(components[1]);
+					}
+				}
 				
 				highScoreList.add(objRow);
 			}
@@ -122,11 +161,25 @@ public class BreakoutHighScoreSystem implements HighScoreSystem {
 			highScoreDialog.setHighScoreList(highScoreList);
 			highScoreDialog.setVisible(true);
 		} catch (IOException e) {
-			System.err.println("Breakout: Could not load score rows");
-			e.printStackTrace();
-		} catch (ServiceException e) {
-			System.err.println("Breakout: Could not load score rows");
+			System.err.println("Breakout: Could not show high score list");
 			e.printStackTrace();
 		}
+		finally
+		{
+			try {
+				highScoreStream.close();
+			} catch (IOException e) {
+				System.err.println("Breakout: Could not close highscore stream");
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public void showHighScoreList()
+	{
+		URLConnection highScoreConn = getHighScoreConnection();
+		
+		if(highScoreConn != null)
+			showHighScoreList(highScoreConn);
 	}
 }
