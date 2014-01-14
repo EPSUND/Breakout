@@ -137,7 +137,7 @@ public class BreakoutHighScoreSystem implements HighScoreSystem {
 					
 					if(components[0].equals("name"))
 					{
-						objRow[0] = components[1];
+						objRow[0] = components.length < 2 ? "" : components[1];//Must handle if the user didn't enter a name
 					}
 					else if(components[0].equals("score"))
 					{
