@@ -165,7 +165,8 @@ public class BreakoutHighScoreSystem implements HighScoreSystem {
 		finally
 		{
 			try {
-				highScoreStream.close();
+				if(highScoreStream != null)
+					highScoreStream.close();
 			} catch (IOException e) {
 				System.err.println("Breakout: Could not close highscore stream");
 				e.printStackTrace();
